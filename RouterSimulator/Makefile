@@ -1,7 +1,5 @@
-# Makefile para compilar tareas en C++
-
-tarea : main.cpp fuente1.cpp fuente2.cpp  
-	g++ -std=c++11 -g main.cpp fuente1.cpp fuente2.cpp -o ejecutable
+routerSimulator : Envelope.cpp Route.cpp Message.cpp Interface.cpp main.cpp  
+	g++ -std=c++11 -g Envelope.cpp Route.cpp Message.cpp Interface.cpp main.cpp -o routerSimulator
 
 clean :
-	rm -f *.o ejecutable core
+	rm -f *.o routerSimulator core
