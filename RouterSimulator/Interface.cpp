@@ -49,15 +49,16 @@ void Interface::assemblePackage(char* message){
         token = strtok (NULL, ";");
         ++n;
     }
-    for(int i=0; i<5; ++i){
+    for(int i=0; i<5; ++i)
         printf ("%s\n",tokens[i]);
-    }
-    Action action;
-    Message message(&tokens[2], &tokens[3], &tokens[4], action);
-	Envelope envelope(&tokens[0], &tokens[1], message, 1);
-	printf ("%s\n",envelope.getMacSender);
-	printf ("%s\n",envelope.getMacReceiver);
-	printf ("%s\n",envelope.getMessage.getIPSender);
+    
+    struct Action action;
+	action.type = 1;
+	strcpy(action.ip, tokens[2]);
+
+    Message msg(tokens[2], tokens[3], tokens[4], action);
+	Envelope envelope(tokens[0], tokens[1], msg, 1);
+
 }
 
 bool Interface::isBroadcast(char*){

@@ -1,6 +1,6 @@
 #include "Envelope.h"
 
-Envelope::Envelope(char* macSender, char* macReceiver, Message message, char sequenceNumber){
+Envelope::Envelope(char* macSender, char* macReceiver, Message message, int sequenceNumber){
     this->macSender = macSender;
     this->macReceiver = macReceiver;
     this->message = message;
@@ -20,6 +20,6 @@ Message Envelope::getMessage(){
     return this->message;
 }
 
-char Envelope::getSequenceNumber(){
+int Envelope::getSequenceNumber(){
     return this->sequenceNumber;
 }
