@@ -7,7 +7,7 @@ Envelope::Envelope(char* macSender, char* macReceiver, Message message, int sequ
     this->sequenceNumber = sequenceNumber;
 }
 
-//Envelope::Envelope(){}
+Envelope::Envelope(){}
 
 char* Envelope::getMacSender(){
     return this->macSender;

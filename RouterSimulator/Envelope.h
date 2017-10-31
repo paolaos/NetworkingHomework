@@ -5,7 +5,7 @@
 class Envelope{
     public:
     Envelope(char*, char*, Message, int);
-    //Envelope();
+    Envelope();
     char* getMacSender();
     char* getMacReceiver();
     Message getMessage();

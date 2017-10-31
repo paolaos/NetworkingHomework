@@ -5,10 +5,12 @@
 #include <string.h>
 #include <list>
 #include <map>
+#include <stdlib.h>     /* exit, EXIT_FAILURE */
 
 using namespace std;
 #ifndef interfaceh   // if x.h hasn't been included yet...
 #define interfaceh  //   #define this so the compiler knows it has been included
+#define BROADCAST "192.168.0.0"
 
 class Interface{
     public:
@@ -16,13 +18,19 @@ class Interface{
     Interface();
     void run();
     void receive();
-    void assemblePackage(char*);
+    Envelope assemblePackage(char*);
     bool isBroadcast(char*);
-    Route checkIPTable(char*);
-    Envelope packEnvelopeBroadcast(Route);
+    int checkIPTable(Message);
     Envelope packEnvelope(Message);
     void send(Envelope);
-
+    list<Route>* getIPTable();
+    map<bool, queue<Message> >* getMessagePool();
+    queue<Envelope> getInbox();
+    queue<Envelope> getOutbox();
+    char* getIPAddress();
+    char* getMacAddress();
+    map<char*, char*> getMacTable();
+	
     private:
     list<Route>* ipTable;
     map<bool, queue<Message> >* messagePool;

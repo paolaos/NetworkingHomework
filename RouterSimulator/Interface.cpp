@@ -8,8 +8,21 @@ Interface::Interface(list<Route>* ipTable, map<bool, queue<Message> >* messagePo
 Interface::Interface(){}
 
 void Interface::run(){
-    this->receive();
+    /* un hilo hace this->receive(); this.assemblePackage() se pone en cola
+    el otro saca de la cola, desempaqueta, luego revisa si es broadcast, luego si es va a la IPTable, si no mete a la memoria compartida,
+    */
 
+//Pruebas
+    Envelope envelope = this->assemblePackage("Bolinchas.jorge;Bolinchas.kevin;201.1.1.1;192.168.0.0;0;HELLO!!!!");
+//Solo para imprimir
+    Message message = envelope.getMessage();
+    Action action = message.getRequestedAction();
+    printf ("%s, %s, %s, %s, %d, %s, %s\n",envelope.getMacSender(), envelope.getMacReceiver(), message.getIPSender(), message.getIPReceiver(), action.getType(), action.getIP(), message.getMessage());
+    int distance = 0;
+    if (this->isBroadcast(message.getIPReceiver())){
+            //printf("It is Broadcast\n");
+	    distance = this->checkIPTable(action.getIP());
+    }
 }
 
 void Interface::receive(){
@@ -38,8 +51,9 @@ void Interface::receive(){
     }*/
 }
 
-//message = MacFuente;MacDestino;IPFuente;IPDestino;Mensaje
-void Interface::assemblePackage(char* message){
+//current message = MacFuente;MacDestino;IPFuente;IPDestino;TipoAccion;IPAccion;Mensaje
+//old message = MacFuente;MacDestino;IPFuente;IPDestino;
+Envelope Interface::assemblePackage(char* message){
     char* str = strdup(message);
     char** tokens = new char*[10];
     char* token = strtok (str,";");
@@ -49,26 +63,42 @@ void Interface::assemblePackage(char* message){
         token = strtok (NULL, ";");
         ++n;
     }
-    for(int i=0; i<5; ++i)
-        printf ("%s\n",tokens[i]);
-    
-    struct Action action;
-	action.type = 1;
-	strcpy(action.ip, tokens[2]);
-
-    Message msg(tokens[2], tokens[3], tokens[4], action);
-	Envelope envelope(tokens[0], tokens[1], msg, 1);
-
+    /*for(int i=0; i<n; ++i){
+	printf("%s\n",tokens[i]);
+    }*/
+    //printf("%d\n", n);
+    if(n<6 && n>7){
+       printf("Envelope can't assemble, the message received by the socket doesn't satisfy the requirement length");
+       exit (EXIT_FAILURE);
+    }
+    Message msg;
+    if(atoi(tokens[4])==0){
+	//printf("No Action");
+       Action action(atoi(tokens[4]), "NoAction");
+       Message msg1(tokens[2], tokens[3], tokens[5], action);
+       msg = msg1;
+    }
+    else if(atoi(tokens[4])==1){
+       Action action(atoi(tokens[4]), tokens[5]);
+       Message msg1(tokens[2], tokens[3], tokens[6], action);
+	msg = msg1;
+    }
+    else{
+       printf("Invalid action type");   
+       exit (EXIT_FAILURE);
+    }
+    Envelope envelope(tokens[0], tokens[1], msg, 1);
+    return envelope;
 }
 
-bool Interface::isBroadcast(char*){
+bool Interface::isBroadcast(char* ip){
+    if((string)ip==BROADCAST){
+       return true;
+    }
     return false;
 }
 
-Route Interface::checkIPTable(char*){
-}
-
-Envelope Interface::packEnvelopeBroadcast(Route route){
+int Interface::checkIPTable(char *network}{
 }
 
 Envelope Interface::packEnvelope(Message message){
@@ -76,6 +106,36 @@ Envelope Interface::packEnvelope(Message message){
 
 void Interface::send(Envelope envelope){
 }
+
+list<Route>* Interface::getIPTable(){
+    return this->ipTable;
+}
+
+map<bool, queue<Message> >* Interface::getMessagePool(){
+    return this->messagePool;
+}
+
+queue<Envelope> Interface::getInbox(){
+    return this->inbox;
+}
+
+queue<Envelope> Interface::getOutbox(){
+    return this->outbox;
+}
+
+char* Interface::getIPAddress(){
+    return this->ipAddress;
+}
+
+char* Interface::getMacAddress(){
+    return this->macAddress;
+}
+
+map<char*, char*> Interface::getMacTable(){
+    return this->macTable;
+}
+
+
 
 
 
