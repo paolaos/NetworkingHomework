@@ -2,6 +2,7 @@
 #include "Envelope.h"
 #include "Route.h"
 #include "Socket.h"
+#include "Message.h"
 #include <string.h>
 #include <list>
 #include <map>
@@ -12,24 +13,30 @@ using namespace std;
 
 class Interface{
     public:
-    Interface(list<Route>*, map<bool, queue<Message> >*);
+    Interface(list<Route>*, map<bool, queue<Message> >*, char*, char*, char*, char*);
     Interface();
     void run();
     void receive();
-    void assemblePackage(char*);
+    Envelope assemblePackage(char*);
     bool isBroadcast(char*);
     Route checkIPTable(char*);
     Envelope packEnvelopeBroadcast(Route);
-    Envelope packEnvelope(Message);
-    void send(Envelope);
+    void sendInternally(Envelope, boolean);
+	void sendToSharedMemory(Message);
 
     private:
+	Message unwrap(Envelope);
+	Envelope wrap(Message);
+	Message checkSharedMemory();
+	void processMessage(Message, bool);
     list<Route>* ipTable;
     map<bool, queue<Message> >* messagePool;
     queue<Envelope> inbox;
     queue<Envelope> outbox;
-    char* ipAddress = new char[4];
-    char* macAddress = new char[10];
+    char* ipAddress;
+    char* macAddress;
+    char* realIpAddress;
+    char* dispatcherAddress;
     map<char*, char*> macTable;
 };
 
