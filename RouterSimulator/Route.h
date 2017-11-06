@@ -9,9 +9,9 @@ class Route{
     char* getThrough();
         
     private:
-    char* network = new char[4];
+    char* network;
     int distance;
-    char *through = new char[10];
+    char *through;
         
 };
 

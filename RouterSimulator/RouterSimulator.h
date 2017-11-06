@@ -1,19 +1,22 @@
 #include "Message.h"
 #include "Route.h"
+#include "Interface.h"
+#include <iostream>
+#include <fstream>
 #ifndef routerSimulatorh   // if x.h hasn't been included yet...
 #define routerSimulatorh  //   #define this so the compiler knows it has been included
 
+using namespace std;
 class RouterSimulator{
     public:
 	RouterSimulator();
-	list<Route> getIPTable();
-	map<boolean, queue<Message>> getMessagePool();
- 	void runInterfaceA();
-	void runInterfaceB();
+    void readIpTable();
+ 	void runInterfaceK();
+	void runInterfaceP();
         
     private:
 	list<Route> ipTable; 
-	map<boolean, queue<Message>> messagePool;
+	map<bool, queue<Message>> messagePool;
         
 };
 

@@ -4,18 +4,22 @@
 
 class Envelope{
     public:
-    Envelope(char*, char*, Message, int);
+    Envelope(char*, char*, Message);
+    Envelope(char*, char*, char*);
+    Envelope(char*, char*, int, char*);
     //Envelope();
     char* getMacSender();
     char* getMacReceiver();
     Message getMessage();
-    int getSequenceNumber();
+    char* getRequestedIp();
+    int getDistance();
 
     private:
     char* macSender;
     char* macReceiver;
     Message message;
-    int sequenceNumber;
+    char* requestedIp;
+    int distance;
 };
 
 #endif

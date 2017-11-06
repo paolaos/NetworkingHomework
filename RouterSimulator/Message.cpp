@@ -9,11 +9,11 @@ Message::Message(char* ipSender, char* ipReceiver, char* message, Action action)
 
 Message::Message(){}
 
-char* Message::getIPSender(){
+char* Message::getIpSender(){
     return this->ipSender;
 }
 
-char* Message::getIPReceiver(){
+char* Message::getIpReceiver(){
     return this->ipReceiver;
 }
 

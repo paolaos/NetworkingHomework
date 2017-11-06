@@ -1,0 +1,7 @@
+﻿12.0.0.0;2;Bolinchas.daniel
+165.8.0.0;2;LEGO3
+200.5.0.0;1;Bolinchas.daniel
+140.90.0.0;0;Bolinchas.jorge
+25.0.0.0;1;LEGO3
+201.6.0.0;0;LEGO3
+
