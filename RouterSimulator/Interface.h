@@ -29,7 +29,7 @@ class Interface{
     Message checkSharedMemory();
 	void processMessage();
     void send();
-    void addToShareMemory(Message);
+    void addToSharedMemory(Message);
 
     private:
 	/*void sendInternally(Envelope);

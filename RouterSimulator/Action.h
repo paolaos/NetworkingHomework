@@ -6,7 +6,7 @@ class Action{
         Action(int, char*);
 	Action();
 	int getType();
-        char* getIP();
+    char* getIp();
 
     private:
 	int type;

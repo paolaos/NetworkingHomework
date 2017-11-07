@@ -4,29 +4,36 @@
 
 class Envelope{
     public:
-    Envelope(int, char*, char*, Message);
-    Envelope(char*, char*, char*);
-    Envelope(int, char*, char*);
-    Envelope(int, char*, char*, int, char*);
-    //Envelope();
+    Envelope(char*, char*, Message); //normal in
+    Envelope(int, char*, char*, char*, int, Message); //normal out, type 1
+    Envelope(char*, char*, char*); //broadcast in
+    Envelope(int, char*, char*, int, char*, int, char*); //broadcast out,type 2
+    Envelope(char*, char*, int); //dispatcher in 
+    Envelope(int, char*, char*); //dispatcher out, type 3
+
     char* getMacSender();
     char* getMacReceiver();
-    char* getMacRequested();
-    char* getIpRelated();
+    char* getRequestedMac();
     Message getMessage();
-    char* getRequestedIp();
     int getDistance();
     int getType();
+    int getRealPort();
+    char* getRealIpAddress();
+    char* getRequestedIp();
+    bool getIsDispatcher();
 
     private:
     int type;
+    int realPort;
+    char* realIpAddress;
     char* macSender;
     char* macReceiver;
-    char* macRequested;
-    char* ipRelated;
+    char* requestedMac;
     Message message;
     char* requestedIp;
+    int requestedPort;
     int distance;
+    bool isDispatcher;
 };
 
 #endif

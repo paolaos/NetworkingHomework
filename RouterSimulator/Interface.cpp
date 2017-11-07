@@ -19,9 +19,9 @@ void Interface::wakeUp(char* macAddress, char* realIpAddress, int dispatcherPort
    char buffer[ 512 ];
    s.Connect( dispatcherAddress, dispatcherPort ); // Same port as server
    char str[50];
-   strcpy (str,macAddress);
+   strcpy (str,this->macAddress);
    strcat (str,";");
-   strcat (str,realIpAddress);
+   strcat (str,this->realIpAddress);
    s.Write(  str , 50 );
    /*s.Read( buffer, 512 );	// Read the answer sent back from server
    printf( "%s", buffer );	// Print the string*/
@@ -29,6 +29,7 @@ void Interface::wakeUp(char* macAddress, char* realIpAddress, int dispatcherPort
 
 //este metodo se encarga de ejecutar la simulacion
 void Interface::run(){
+    thread startReceiver(&Interface::receive, this);
     this->receive();
     this->processEnvelope();
     this->processMessage();
@@ -74,19 +75,53 @@ void Interface::receive(){ //nice to have: dos hilos
 
 }
 
+//posible mensaje de salida
+//mensaje normal = MacFuente;MacDestino;IPFuente;IPDestino;TipoAccion;IPAccion;Mensaje
+//mensaje de Broadcast local = MacFuente;MacReceiver;distance;IpSolicitada
+//mensaje de dispatcher = macSender;macSolicitada
 void Interface::send(){
     Envelope envelope = this->outbox.front();
+    Socket s;
+    char buffer[ 512 ];
+    s.Connect( envelope.getRealIpAddress(), envelope.getRealPort() ); // Same port as server
+    char str[200];
     switch(envelope.getType()){
-        case 1:
-            //normal, va para Daniel o Jorge
+        case 1: {
+            strcpy (str,envelope.getMacSender());
+            strcat (str,";");
+            strcat (str,envelope.getMacReceiver());
+            strcat (str,";");
+            strcat (str,envelope.getMessage().getIpSender());
+            strcat (str,";");
+            strcat (str,envelope.getMessage().getIpReceiver());
+            strcat (str,";");
+            string type = to_string(envelope.getMessage().getRequestedAction().getType());
+            strcat (str, type.c_str());
+            strcat (str,";");
+            strcat (str,envelope.getMessage().getRequestedAction().getIp());
+            strcat (str,";");
+            strcat (str,envelope.getMessage().getMessage());
             break;
-        case 2:
-            //broadcast, va para Jorge
+        }
+        case 2: { //broadcast
+            strcpy (str,envelope.getMacSender());
+            strcat (str,";");
+            strcat (str,envelope.getMacReceiver());
+            strcat (str,";");
+            string distance = to_string(envelope.getDistance());
+            strcat (str, distance.c_str()); 
+            strcat (str,";");
+            strcat (str,envelope.getRequestedIp());   
             break;
-        default: //type==3
-            //va para el dispatcher
+        }          
+        default: { //dispatcher
+            strcpy (str,envelope.getMacSender());
+            strcat (str,";");
+            strcat (str,envelope.getRequestedMac());
             break;
+        }
     }
+    s.Write(  str , 200 );    
 }
 
 Message Interface::checkSharedMemory() {
@@ -107,21 +142,21 @@ Message Interface::checkSharedMemory() {
 
 }
 
-void Interface::addToShareMemory(Message message){
+void Interface::addToSharedMemory(Message message){
     if((string)this->macAddress=="Bolinchas.kevin"){
-        map<bool,queue<Message> >::iterator it = messagePool->find(false);
+        map<bool,queue<Message> >::iterator it = messagePool->find(true);
         it->second.push(message);
     }
     else if((string)this->macAddress=="LEGO1"){
-        map<bool,queue<Message> >::iterator it = messagePool->find(true);
+        map<bool,queue<Message> >::iterator it = messagePool->find(false);
         it->second.push(message);
     }
 }
 
 //Posibles mensajes entrantes
 //mensaje normal = MacFuente;MacDestino;IPFuente;IPDestino;TipoAccion;IPAccion;Mensaje
-//mensaje de Broadcast local = MacFuente;*;IpSolicitada
-//mensaje de dispatcher = *;MacSolicitada;IpAsociada
+//mensaje de Broadcast local = maquested;requestedIp;requestedIp
+//mensaje de dispatcher = MacSolicitada;IpAsociada;puerto asociado
 Envelope Interface::assemblePackage(char* message){
     char* str = strdup(message);
     char** tokens = new char*[10];
@@ -146,8 +181,8 @@ Envelope Interface::assemblePackage(char* message){
     }
     
     //dispatcher
-    else if(n==2){
-        Envelope envelope(3, tokens[0], tokens[1]);
+    else if(n==4){
+        Envelope envelope(tokens[0], tokens[1], tokens[2]);
         return envelope;
     }
     
@@ -173,7 +208,7 @@ Envelope Interface::assemblePackage(char* message){
                 printf("Invalid action type");   
                 exit (EXIT_FAILURE);
             }
-            Envelope envelope(1, tokens[0], tokens[1], msg);
+            Envelope envelope(tokens[0], tokens[1], msg);
             return envelope;
         }
     }
@@ -185,13 +220,39 @@ void Interface::processEnvelope(){
     if(this->isBroadcast(envelope.getMacReceiver())){
         int distance = this->getDistance(envelope.getRequestedIp());
 		if(distance > -1){
-        	Envelope envelope(2, this->macAddress, "*", distance, envelope.getRequestedIp());
-        	this->outbox.push(envelope);
+            map<char*, char*>::iterator it = this->cacheTable.find(envelope.getMacReceiver()); //busco si tengo la ip real
+	        if(it!=cacheTable.end()) {
+                char* str = strdup(it->second);
+                char** tokens = new char*[10];
+                char* token = strtok (str,";");
+                int n = 0;
+                while (token != NULL){
+                    tokens[n] = token;
+                    token = strtok (NULL, ";");
+                    ++n;
+                }
+                Envelope envelopeBroadcast(2, this->macAddress, "*", atoi(tokens[1]), tokens[0], distance, envelope.getRequestedIp());
+        	    this->outbox.push(envelopeBroadcast);
+	        }
+            else { //se la pido al dispatcher
+                Envelope envelopeDispatcher(3, envelope.getMacReceiver(), "*");
+                this->outbox.push(envelopeDispatcher);
+                //se anade de nuevo a la cola de entrada ya que no tengo la ipreal
+                this->inbox.push(envelope);
+	        }	
 		} else {
 			printf("Invalid requested ip address");   
             exit (EXIT_FAILURE);
 		}
 			
+    }
+    else if(envelope.getIsDispatcher()){
+        char str[100];
+        strcpy (str,envelope.getRealIpAddress());
+        strcat (str,";");
+        string realPort = to_string(envelope.getRealPort());
+        strcat (str,realPort.c_str());
+        cacheTable.insert ( pair<char*,char*>(envelope.getRequestedMac(),str) );
     }
     else {
         Message message = envelope.getMessage();
@@ -201,7 +262,6 @@ void Interface::processEnvelope(){
 			else {
 	            map<bool,queue<Message> >::iterator it = messagePool->find(false);
 	            it->second.push(message);
-
 			}
         }
         else if((string)macAddress=="LEGO1"){
@@ -263,60 +323,32 @@ void Interface::processMessage(){
 			if((string)macAddressNext != "") {
 	            map<char*, char*>::iterator it = this->cacheTable.find(macAddressNext); //busco si tengo la ip real
 	            if(it!=cacheTable.end()) {
-				    Envelope envelope(1, this->macAddress, macAddressNext, message);
+                    char* str = strdup(it->second);
+                    char** tokens = new char*[10];
+                    char* token = strtok (str,";");
+                    int n = 0;
+                    while (token != NULL){
+                        tokens[n] = token;
+                        token = strtok (NULL, ";");
+                        ++n;
+                    }
+                    
+				    Envelope envelope(1, this->macAddress, macAddressNext, tokens[0], atoi(tokens[1]), message);
 	                this->outbox.push(envelope);
 	            }
 	            else { //se la pido al dispatcher
-                    Envelope envelope(3, macAddressNext, "*");
+                    Envelope envelope(3, this->macAddress, macAddressNext);
                     this->outbox.push(envelope);
                     //se anade de nuevo a la memoria compartida ya que no tengo la ipreal
-                    this->addToShareMemory(message);
+                    this->addToSharedMemory(message);
 	            }
 			} else {
 				printf("Error with mac address. ");
             	exit (EXIT_FAILURE);
 			} 
-            
-            /*//ahora busco el IP asociado
-
-			Envelope envelope(this->macAddress, macAddressNext, message);
-			this->sendInternally(envelope);*/
-
-			/*if((string)macAddress == "LEGO1")
-				macAddressNext = "LEGO2";
-			else if((string)macAddress == "bolinchas.Kevin")
-				macAddressNext = "bolinchas.Jorge";
-
-			else {
-				printf("Error with Interface's mac address. ");
-            	exit (EXIT_FAILURE);
-			}*/
 		}
     }
-	//char* sender = message.getIPSender();
-	//char* receiver = message.getIPReceiver();	
-
-	//if(receiver no es igual a mi direccion ip) {
-		//if(!fromSharedMem) {
-			//sendToSharedMemory(message);
-		//}
-		//else {
-			//Envelope envelope = wrap(message);
-			//sendInternally(envelope, 0); //por el momento siempre va a ser 0 porque se asume que ya se todas las direcciones y que solo conozco a David.
-		//}		
-	//} else {
-		//cout <<message.getMessage(); //luego tenemos que ver que hacemos con el tipo de action!
-	//}
-
 }
-
-
-//char* Interface::callDispatcher(char* ) {}
-
-/*void Interface::sendInternally(Envelope envelope){
-	
-}*/
-
 
 
 

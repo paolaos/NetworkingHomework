@@ -11,6 +11,6 @@ int Action::getType(){
     return this->type;
 }
 
-char* Action::getIP(){
+char* Action::getIp(){
     return this->ip;
 }
