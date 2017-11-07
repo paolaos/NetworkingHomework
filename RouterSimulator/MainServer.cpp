@@ -18,7 +18,7 @@ int main( int argc, char * argv[] ) {
       else if (0 == childpid) {  // child code
               s1.Close();	// Close original socket in child
               s2->Read( a, 512 ); // Read a string from client
-              s2->Write( a, 500 );	// Write it back to client
+              s2->Write( "ACK", 500 );	// Write it back to client
               exit( 0 );	// Exit
       }
       s2->Close();		// Close socket in parent

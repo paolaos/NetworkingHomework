@@ -44,6 +44,7 @@ class Interface{
     char* macAddress;
     char* realIpAddress;
     char* dispatcherAddress;
+	int dispatcherPort;
     map<char*, char*> cacheTable;
 };
 

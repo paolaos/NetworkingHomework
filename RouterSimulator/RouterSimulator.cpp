@@ -32,14 +32,15 @@ void RouterSimulator::readIpTable(){
         cout << "Unable to open file"; 
         exit(EXIT_FAILURE);
     }
-    /*for(list<Route>::iterator it=this->ipTable.begin(); it!=this->ipTable.end() ;++it){
+    for(list<Route>::iterator it=this->ipTable.begin(); it!=this->ipTable.end() ;++it){
         cout << it->getNetwork() << " " << it->getDistance() << " " << it->getThrough() << endl;
-    }*/
+    }
 }
 
 void RouterSimulator::runInterfaceK(){
-    Interface interface(&this->ipTable, &this->messagePool, "140.90.0.0", "140.90.0.10", "Bolinchas.kevin", "192.168.122.1", "desconocidaAun", 9876);
-    cout << interface.getDistance("200.5.0.0");
+    Interface interface(&this->ipTable, &this->messagePool, "140.90.0.0", "140.90.0.10", "Bolinchas.kevin", "192.168.122.1", "192.168.122.1", 9876);
+    cout << "hola" << endl;
+    interface.receive();
 }
 
 void RouterSimulator::runInterfaceP(){
