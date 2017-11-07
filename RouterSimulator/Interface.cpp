@@ -46,7 +46,7 @@ void Interface::receive(){ //nice to have: dos hilos
     Socket s1, *s2;
     char a[512];
     s1.Bind(9876);		// Port to access this mirror server
-    s1.Listen( 5 );		// Set backlog queue to 5 conections
+    s1.Listen( 5 );		// Set backlog queue to 5 connections
     s2 = s1.Accept();
     s1.Close();
     s2->Read( a, 75 ); // Read a string from client
@@ -88,6 +88,7 @@ Message Interface::checkSharedMemory() {
         }
         return it->second.front();
     }
+
 }
 
 //Posibles mensajes entrantes
@@ -161,28 +162,46 @@ Envelope Interface::assemblePackage(char* message){
 void Interface::processEnvelope(){
     Envelope envelope = inbox.front();
     if(this->isBroadcast(envelope.getMacReceiver())){
-        int distance = getDistance(envelope.getRequestedIp());
-        Envelope envelope(this->macAddress, "*", distance, envelope.getRequestedIp());
-        this->outbox.push(envelope);
+        int distance = this->getDistance(envelope.getRequestedIp());
+		if(distance > -1){
+        	Envelope envelope(this->macAddress, "*", distance, envelope.getRequestedIp());
+        	this->outbox.push(envelope);
+		} else {
+			printf("Invalid requested ip address type");   
+            exit (EXIT_FAILURE);
+		}
+			
     }
-    else{
+    else {
         Message message = envelope.getMessage();
         if((string)macAddress=="Bolinchas.kevin"){
-            map<bool,queue<Message> >::iterator it = messagePool->find(false);
-            it->second.push(message);
+			if((string)message.getIpReceiver() == "Bolinchas.kevin")
+				cout << "Mensaje para Kevin: " << (string)message.getMessage() << endl;
+			else {
+	            map<bool,queue<Message> >::iterator it = messagePool->find(false);
+	            it->second.push(message);
+
+			}
         }
         else if((string)macAddress=="LEGO1"){
-            map<bool,queue<Message> >::iterator it = messagePool->find(true);
-            it->second.push(message);
+			if((string)message.getIpReceiver() == "LEGO1")
+				cout << "Mensaje para Paola: " << (string)message.getMessage() << endl;
+			else {
+            	map<bool,queue<Message> >::iterator it = messagePool->find(true);
+            	it->second.push(message);
+
+			}
         }
+		else {
+			printf("Message with invalid recepient");   
+            exit (EXIT_FAILURE);
+		}
     }
 }
 
 bool Interface::isBroadcast(char* macReceiver){
-    if((string)macReceiver == "*"){
-        return true;
-    }
-    return false;
+    return (string)macReceiver == "*";
+
 }
 
 //este metodo devuelve la distancia que un broadcast pregunta
@@ -207,22 +226,55 @@ char* Interface::checkIpTable(char* ipAddress){
     if(*ite->getNetwork()==*ipAddress){
         return ite->getThrough();
     }
+	
+	return "";
 }
 
 //este metodo ve que hacer con lo que hay en shared memory
 void Interface::processMessage(){
-    Message message = checkSharedMemory();
+    Message message = this->checkSharedMemory();
     if(!this->empty){
-        //lo empaqueto
-        char* macAddressNext = checkIpTable(message.getIpReceiver());
-        map<char*, char*>::iterator it = cacheTable.find(macAddressNext);
-        if(it!=cacheTable.end()){
-            Envelope envelope(this->macAddress, it->first, message);
-            this->outbox.push(envelope);
-         }
-         else{
-           //se lo pido al dispatcher
-         }
+		if((string)message.getIpReceiver() == this->ipAddress)
+			cout << "Mensaje para mi: " << (string)message.getMessage() << endl;
+
+		else {
+	        //lo empaqueto
+			char* macAddressNext = this->checkIpTable(message.getIpReceiver());
+			if((string)macAddressNext != "") {
+				Envelope envelope(this->macAddress, macAddressNext, message);
+			} else {
+				printf("Error with mac address. ");
+            	exit (EXIT_FAILURE);
+			} //ahora busco el IP asociado
+
+			Envelope envelope(this->macAddress, macAddressNext, message);
+			this->sendInternally(envelope);
+
+			/*if((string)macAddress == "LEGO1")
+				macAddressNext = "LEGO2";
+			else if((string)macAddress == "bolinchas.Kevin")
+				macAddressNext = "bolinchas.Jorge";
+
+			else {
+				printf("Error with Interface's mac address. ");
+            	exit (EXIT_FAILURE);
+			}*/
+			
+			
+			
+			
+						
+
+	        /*char* macAddressNext = this->checkIpTable(message.getIpReceiver());
+	        map<char*, char*>::iterator it = this->cacheTable.find(macAddressNext);
+	        if(it!=cacheTable.end()) {
+	            Envelope envelope(this->macAddress, it->first, message);
+	            this->outbox.push(envelope);
+	         }
+	         else {
+	           //se lo pido al dispatcher
+	         }*/
+		}
     }
 	//char* sender = message.getIPSender();
 	//char* receiver = message.getIPReceiver();	
@@ -241,14 +293,12 @@ void Interface::processMessage(){
 
 }
 
-Message Interface::unwrap(Envelope envelope) {
-	//implementar
-}
 
-Envelope Interface::wrap(Message message) {
-	//return this->assemblePackage(message.getMessage);
-}
+//char* Interface::callDispatcher(char* ) {}
 
+void Interface::sendInternally(Envelope envelope){
+	
+}
 
 
 

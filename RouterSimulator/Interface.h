@@ -31,8 +31,8 @@ class Interface{
 	void processMessage();
 
     private:
-	Message unwrap(Envelope);
-	Envelope wrap(Message);
+	void sendInternally(Envelope);
+	char* callDispatche(char*);
     list<Route>* ipTable;
     map<bool, queue<Message> >* messagePool;
     queue<Envelope> inbox;
