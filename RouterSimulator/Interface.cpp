@@ -11,7 +11,7 @@ Interface::Interface(list<Route>* ipTable, map<bool, queue<Message> >* messagePo
 	this->realIpAddress = realIpAddress;
 	this->dispatcherAddress = dispatcherAddress;
     this->dispatcherPort = dispatcherPort;
-    this->wakeUp(macAddress, realIpAddress, dispatcherPort, dispatcherAddress);
+    //this->wakeUp(macAddress, realIpAddress, dispatcherPort, dispatcherAddress);
 }
 
 //este metodo le envia la direccion al dispatcher
@@ -50,19 +50,28 @@ void Interface::run(){
 
 //este metodo actua como servidor para los otros nodos
 void Interface::receive(){ //nice to have: dos hilos
-	//Message message;
-    for( ; ;) {
-        Socket s1, *s2;
-        char a[512];
-        s1.Bind(9876);		// Port to access this mirror server
-        s1.Listen( 5 );		// Set backlog queue to 5 connections
-        s2 = s1.Accept();
-        s1.Close();
-        s2->Read( a, 75 ); // Read a string from client
-        Envelope envelope = this->assemblePackage(a);
-        this->inbox.push(envelope);
-        s2->Close();
-    }
+	int childpid;
+   	char a[512];
+  	Socket s1, *s2;
+
+   	s1.Bind( 9876 );		// Port to access this mirror server
+   	s1.Listen( 5 );		// Set backlog queue to 5 conections
+
+	for( ; ; ) {
+		s2 = s1.Accept();	 	// Wait for a conection
+	  	childpid = fork();	// Create a child to serve the request
+	  	if ( childpid < 0 )
+	     	perror("server: fork error");
+	  	else if (0 == childpid) {  // child code
+	    	s1.Close();	// Close original socket in child
+	        s2->Read( a, 512 ); // Read a string from client
+			s2->Write( "ACK", 3 );	// Write it back to client	
+			/*Envelope envelope = this->assemblePackage(a);
+			this->inbox.push(envelope);*/
+	        exit( 0 );	// Exit
+	  	}
+	  	s2->Close();		// Close socket in parent
+   	}
 }
 
 //posible mensaje de salida
@@ -210,7 +219,7 @@ Envelope Interface::assemblePackage(char* message){
 
 //este metodo revisa si el mensaje es broadcast o si se mete en la sharedMemory
 void Interface::processEnvelope(){
-    for( ; ; ){
+	for( ; ; ){
         if(!this->inbox.empty()) {
             Envelope envelope = inbox.front();
             if(this->isBroadcast(envelope.getMacReceiver())){
