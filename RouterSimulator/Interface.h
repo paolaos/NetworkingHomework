@@ -21,7 +21,6 @@ class Interface{
     void wakeUp(char*, char*, int, char*);
     void run();
     void receive();
-    void receiveFromDispatcher();
     Envelope assemblePackage(char*);
     void processEnvelope();
     bool isBroadcast(char*);
@@ -29,10 +28,12 @@ class Interface{
     char* checkIpTable(char*);
     Message checkSharedMemory();
 	void processMessage();
+    void send();
+    void addToShareMemory(Message);
 
     private:
-	void sendInternally(Envelope);
-	char* callDispatche(char*);
+	/*void sendInternally(Envelope);
+	char* callDispatche(char*);*/
     list<Route>* ipTable;
     map<bool, queue<Message> >* messagePool;
     queue<Envelope> inbox;

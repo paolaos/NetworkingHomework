@@ -4,19 +4,26 @@
 
 class Envelope{
     public:
-    Envelope(char*, char*, Message);
+    Envelope(int, char*, char*, Message);
     Envelope(char*, char*, char*);
-    Envelope(char*, char*, int, char*);
+    Envelope(int, char*, char*);
+    Envelope(int, char*, char*, int, char*);
     //Envelope();
     char* getMacSender();
     char* getMacReceiver();
+    char* getMacRequested();
+    char* getIpRelated();
     Message getMessage();
     char* getRequestedIp();
     int getDistance();
+    int getType();
 
     private:
+    int type;
     char* macSender;
     char* macReceiver;
+    char* macRequested;
+    char* ipRelated;
     Message message;
     char* requestedIp;
     int distance;
