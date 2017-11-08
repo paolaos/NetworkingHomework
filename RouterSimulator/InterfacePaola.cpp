@@ -1,7 +1,7 @@
-#include "Interface.h"
+#include "InterfacePaola.h"
 
 //constructor a utilizar
-Interface::Interface(list<Route>* ipTable, map<bool, queue<Message> >* messagePool, char* network, char* ipAddress, char* macAddress, char* realIpAddress, int realPort, char* dispatcherAddress, int dispatcherPort){
+InterfacePaola::InterfacePaola(list<Route>* ipTable, map<bool, queue<Message> >* messagePool, char* network, char* ipAddress, char* macAddress, char* realIpAddress, int realPort, char* dispatcherAddress, int dispatcherPort){
     this->empty = false;
     this->ipTable = ipTable;
     this->messagePool = messagePool;
@@ -12,11 +12,11 @@ Interface::Interface(list<Route>* ipTable, map<bool, queue<Message> >* messagePo
     this->realPort = realPort;
 	this->dispatcherAddress = dispatcherAddress;
     this->dispatcherPort = dispatcherPort;
-    this->wakeUp(macAddress, realIpAddress, dispatcherPort, dispatcherAddress);
+    //this->wakeUp(macAddress, realIpAddress, dispatcherPort, dispatcherAddress);
 }
 
 //este metodo le envia la direccion al dispatcher
-void Interface::wakeUp(char* macAddress, char* realIpAddress, int dispatcherPort, char* dispatcherAddress){
+void InterfacePaola::wakeUp(char* macAddress, char* realIpAddress, int dispatcherPort, char* dispatcherAddress){
     Socket s;
     char buffer[ 512 ] = "";
     s.Connect( dispatcherAddress, dispatcherPort ); // Same port as server
@@ -33,19 +33,15 @@ void Interface::wakeUp(char* macAddress, char* realIpAddress, int dispatcherPort
 }
 
 //este metodo se encarga de ejecutar la simulacion
-void Interface::run(){
-    thread startEnvelopeProcessor(&Interface::processEnvelope, this);
-    //thread startMessageProcessor(&Interface::processMessage, this);
-    //thread startSender(&Interface::send, this);
+void InterfacePaola::run(){
+
     this->receive();
     
-    startEnvelopeProcessor.join();
-    //startMessageProcessor.join();
-    //startSender.join();
 }
 
+
 //este metodo actua como servidor para los otros nodos
-void Interface::receive(){ //nice to have: dos hilos
+void InterfacePaola::receive(){ //nice to have: dos hilos
 	int childpid;
     int status = 0;
    	char receivedBuffer[512];
@@ -63,6 +59,7 @@ void Interface::receive(){ //nice to have: dos hilos
 	  	else if (0 == childpid) {  // child code
 	    	s1.Close();	// Close original socket in child
 	        s2->Read( receivedBuffer, 512 ); // Read a string from client
+            //printf(receivedBuffer);
             strcpy( sharedMemory, receivedBuffer );
             exit(0);
 	  	}
@@ -72,6 +69,8 @@ void Interface::receive(){ //nice to have: dos hilos
         printf("\n");
         Envelope envelope = this->assemblePackage(receivedBuffer);
 	    this->inbox.push(envelope);
+        this->processEnvelope();
+        //this->send();
 	  	s2->Close();		// Close socket in parent
    	}
     shmdt( sharedMemory );
@@ -82,10 +81,8 @@ void Interface::receive(){ //nice to have: dos hilos
 //mensaje normal = MacFuente;MacDestino;IPFuente;IPDestino;TipoAccion;IPAccion;Mensaje
 //mensaje de Broadcast local = MacFuente;MacReceiver;distance;IpSolicitada
 //mensaje de dispatcher = macSender;macSolicitada
-void Interface::send(){
-    for( ; ; ) {
+void InterfacePaola::send(){
         if(!this->outbox.empty()) {
-            printf("I'm sending");
             Envelope envelope = this->outbox.front();
             this->outbox.pop();
             Socket s;
@@ -131,10 +128,9 @@ void Interface::send(){
             string test = str;
    	        s.Write(  (char*)test.c_str() , test.length() );
         }
-    }
 }
 
-Message Interface::checkSharedMemory() {
+Message InterfacePaola::checkSharedMemory() {
     if((string)this->macAddress=="Bolinchas.Kevin"){
         mutx.lock();
         map<bool,queue<Message> >::iterator it = messagePool->find(false);
@@ -154,7 +150,7 @@ Message Interface::checkSharedMemory() {
 
 }
 
-void Interface::addToSharedMemory(Message message){
+void InterfacePaola::addToSharedMemory(Message message){
     if((string)this->macAddress=="Bolinchas.Kevin"){
         mutx.lock();
         map<bool,queue<Message> >::iterator it = messagePool->find(true);
@@ -171,9 +167,9 @@ void Interface::addToSharedMemory(Message message){
 
 //Posibles mensajes entrantes
 //mensaje normal = MacFuente;MacDestino;IPFuente;IPDestino;TipoAccion;IPAccion;Mensaje
-//mensaje de Broadcast local = maquested;requestedIp;requestedIp
+//mensaje de Broadcast local = maquested;*;requestedIp
 //mensaje de dispatcher = MacSolicitada;IpAsociada;puerto asociado
-Envelope Interface::assemblePackage(char* message){
+Envelope InterfacePaola::assemblePackage(char* message){
     char* str = strdup(message);
     char** tokens = new char*[10];
     char* token = strtok (str,";");
@@ -191,23 +187,16 @@ Envelope Interface::assemblePackage(char* message){
             //exit (EXIT_FAILURE);
         }
         else{
-            printf("Es un broadcast\n");
-            printf("%s, %s, %s\n", tokens[0], tokens[1], tokens[2]);
+            //printf("%s, %s, %s\n", tokens[0], tokens[1], tokens[2]);
             Envelope envelope(tokens[0], tokens[1], tokens[2]);
             return envelope;
         }
     }
     
     //dispatcher
-    else if(n==4 || n==2){
-        if(n==2 && tokens[1]=="-1"){
-            Envelope envelope(3, this->macAddress, tokens[0]);
-            this->outbox.push(envelope);
-        }
-        else if(n==4){
-            Envelope envelope(tokens[0], tokens[1], tokens[2]);
-            return envelope;
-        }
+    else if(n==4){
+        Envelope envelope(tokens[0], tokens[1], tokens[2]);
+        return envelope;
     }
     
     //normal
@@ -239,16 +228,19 @@ Envelope Interface::assemblePackage(char* message){
 }
 
 //este metodo revisa si el mensaje es broadcast o si se mete en la sharedMemory
-void Interface::processEnvelope(){
-	while( true ){
+void InterfacePaola::processEnvelope(){
         if(!this->inbox.empty()) {
             Envelope envelope = this->inbox.front();
             this->inbox.pop();
             if(this->isBroadcast(envelope.getMacReceiver())){
+                printf("Es un broadcast\n");
                 int distance = this->getDistance(envelope.getRequestedIp());
+                cout << distance << endl;
                 if(distance > -1){
-                    map<char*, char*>::iterator it = this->cacheTable.find(envelope.getMacReceiver()); //busco si tengo la ip real
+                    //cout << envelope.getMacReceiver();
+                    map<char*, char*>::iterator it = this->cacheTable.find("Bolinchas.Jorge"); //busco si tengo la ip real
                     if(it!=cacheTable.end()) {
+                        cout << "hola\n";
                         char* str = strdup(it->second);
                         char** tokens = new char*[10];
                         char* token = strtok (str,";");
@@ -258,15 +250,17 @@ void Interface::processEnvelope(){
                             token = strtok (NULL, ";");
                             ++n;
                         }
+                        //cout << atoi(tokens[1]) << ";" << tokens[0]<< ";"  << distance<< ";"  << envelope.getRequestedIp();
                         Envelope envelopeBroadcast(2, this->macAddress, "*", atoi(tokens[1]), tokens[0], distance, envelope.getRequestedIp());
                         this->outbox.push(envelopeBroadcast);
                     }
-                    else { //se la pido al dispatcher
-                        Envelope envelopeDispatcher(3, envelope.getMacReceiver(), "*");
+                    /*else { //se la pido al dispatcher
+                        cout << "I'm gonna ask to the dispatcher\n";
+                        //Envelope envelopeDispatcher(3, envelope.getMacReceiver(), "*");
                         this->outbox.push(envelopeDispatcher);
                         //se anade de nuevo a la cola de entrada ya que no tengo la ipreal
                         this->inbox.push(envelope);
-                    }	
+                    }*/	
                 } else {
                     printf("Invalid requested ip address\n");   
                     //exit (EXIT_FAILURE);
@@ -279,6 +273,7 @@ void Interface::processEnvelope(){
                 strcat (str,";");
                 string realPort = to_string(envelope.getRealPort());
                 strcat (str,realPort.c_str());
+                cout << str << endl;
                 cacheTable.insert ( pair<char*,char*>(envelope.getRequestedMac(),str) );
             }
             else {
@@ -309,16 +304,15 @@ void Interface::processEnvelope(){
                 }
             }
         }
-    }
 }
 
-bool Interface::isBroadcast(char* macReceiver){
+bool InterfacePaola::isBroadcast(char* macReceiver){
     return (string)macReceiver == "*";
 
 }
 
 //este metodo devuelve la distancia que un broadcast pregunta
-int Interface::getDistance(char* ipAddress){
+int InterfacePaola::getDistance(char* ipAddress){
     char* network = this->getNetwork(ipAddress);
     //cout << network;
     mutx.lock();
@@ -335,7 +329,7 @@ int Interface::getDistance(char* ipAddress){
 
 
 //este metodo devuelve a traves de quien se manda
-char* Interface::checkIpTable(char* ipAddress){
+char* InterfacePaola::checkIpTable(char* ipAddress){
     char* network = this->getNetwork(ipAddress);
     mutx.lock();
     list<Route>::iterator ite = this->ipTable->begin();
@@ -350,7 +344,7 @@ char* Interface::checkIpTable(char* ipAddress){
 	return "";
 }
 
-char* Interface::getNetwork(char* ipAddress){
+char* InterfacePaola::getNetwork(char* ipAddress){
     char* str = strdup(ipAddress);
     char** tokens = new char*[10];
     char* token = strtok (str,".");
@@ -374,7 +368,7 @@ char* Interface::getNetwork(char* ipAddress){
     return (char*)network.c_str();
 }
 
-bool Interface::isSharedMemoryEmpty(){
+bool InterfacePaola::isSharedMemoryEmpty(){
     if((string)this->macAddress=="Bolinchas.Kevin"){
         mutx.lock();
         map<bool,queue<Message> >::iterator it = messagePool->find(false);
@@ -395,8 +389,8 @@ bool Interface::isSharedMemoryEmpty(){
 }
 
 //este metodo ve que hacer con lo que hay en shared memory
-void Interface::processMessage(){
-    while(true){
+void InterfacePaola::processMessage(){
+    //while(true){
         if(!isSharedMemoryEmpty()){
             Message message = this->checkSharedMemory();
             if((string)message.getIpReceiver() == this->ipAddress)
@@ -422,8 +416,8 @@ void Interface::processMessage(){
                         this->outbox.push(envelope);
                     }
                     else { //se la pido al dispatcher
-                        cout << "hola";
-                        Envelope envelope(3, this->macAddress, macAddressNext);
+                        cout << "I'm gonna ask to the dispatcher\n";
+                        Envelope envelope(3, macAddressNext, "*");
                         this->outbox.push(envelope);
                         //se anade de nuevo a la memoria compartida ya que no tengo la ipreal
                         this->addToSharedMemory(message);
@@ -434,7 +428,7 @@ void Interface::processMessage(){
                 } 
             }
         }
-    }
+    //}
 }
 
 

@@ -15,12 +15,12 @@
 #include <sys/wait.h>
 
 using namespace std;
-#ifndef interfaceh   // if x.h hasn't been included yet...
-#define interfaceh  //   #define this so the compiler knows it has been included
+#ifndef interfacekevinh   // if x.h hasn't been included yet...
+#define interfacekevinh  //   #define this so the compiler knows it has been included
 
-class Interface{
+class InterfaceKevin{
     public:
-    Interface(list<Route>*, map<bool, queue<Message> >*, char*, char*, char*, char*, int, char*, int);
+    InterfaceKevin(list<Route>*, map<bool, queue<Message> >*, char*, char*, char*, char*, int, char*, int);
     void wakeUp(char*, char*, int, char*);
     void run();
     void receive();

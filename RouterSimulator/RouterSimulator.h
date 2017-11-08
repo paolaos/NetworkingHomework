@@ -1,6 +1,7 @@
 #include "Message.h"
 #include "Route.h"
-#include "Interface.h"
+#include "InterfaceKevin.h"
+#include "InterfacePaola.h"
 #include <iostream>
 #include <fstream>
 #ifndef routerSimulatorh   // if x.h hasn't been included yet...

@@ -38,14 +38,20 @@ void RouterSimulator::readIpTable(){
 }
 
 void RouterSimulator::runInterfaceK(){
-    Interface interface(&this->ipTable, &this->messagePool, "140.90.0.0", "140.90.0.10", "Bolinchas.Kevin", "192.168.0.108", 9876, "192.168.0.106", 1024);
+    InterfaceKevin interface(&this->ipTable, &this->messagePool, "140.90.0.0", "140.90.0.10", "Bolinchas.Kevin", "192.168.0.108", 9876, "192.168.0.106", 1024);
     interface.run();
 }
 
 void RouterSimulator::runInterfaceP(){
+    InterfacePaola interface(&this->ipTable, &this->messagePool, "140.90.0.0", "140.90.0.10", "Bolinchas.Kevin", "192.168.0.108", 9876, "192.168.0.106", 1024);
+    interface.run();
 }
 
 int main(){
     RouterSimulator routerSimulator;
-    routerSimulator.runInterfaceK();
+    thread kevin(&RouterSimulator::runInterfaceK, &routerSimulator);
+    thread paola(&RouterSimulator::runInterfaceP, &routerSimulator);
+    
+    kevin.join();
+    paola.join();
 }
