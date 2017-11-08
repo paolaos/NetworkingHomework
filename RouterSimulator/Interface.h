@@ -10,6 +10,9 @@
 #include <iostream>
 #include <stdlib.h>
 #include <thread>
+#include <sys/shm.h>
+#include <mutex>
+#include <sys/wait.h>
 
 using namespace std;
 #ifndef interfaceh   // if x.h hasn't been included yet...
@@ -17,7 +20,7 @@ using namespace std;
 
 class Interface{
     public:
-    Interface(list<Route>*, map<bool, queue<Message> >*, char*, char*, char*, char*, char*, int);
+    Interface(list<Route>*, map<bool, queue<Message> >*, char*, char*, char*, char*, int, char*, int);
     void wakeUp(char*, char*, int, char*);
     void run();
     void receive();
@@ -30,6 +33,8 @@ class Interface{
 	void processMessage();
     void send();
     void addToSharedMemory(Message);
+    char* getNetwork(char*);
+    bool isSharedMemoryEmpty();
 
     private:
 	/*void sendInternally(Envelope);
@@ -43,9 +48,11 @@ class Interface{
     char* ipAddress;
     char* macAddress;
     char* realIpAddress;
+    int realPort;
     char* dispatcherAddress;
 	int dispatcherPort;
     map<char*, char*> cacheTable;
+    mutex mutx;
 };
 
 #endif

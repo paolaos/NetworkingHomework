@@ -38,8 +38,8 @@ void RouterSimulator::readIpTable(){
 }
 
 void RouterSimulator::runInterfaceK(){
-    Interface interface(&this->ipTable, &this->messagePool, "140.90.0.0", "140.90.0.10", "Bolinchas.kevin", "192.168.122.1", "192.168.122.1", 9876);
-    interface.receive();
+    Interface interface(&this->ipTable, &this->messagePool, "140.90.0.0", "140.90.0.10", "Bolinchas.Kevin", "192.168.0.108", 9876, "192.168.0.106", 1024);
+    interface.run();
 }
 
 void RouterSimulator::runInterfaceP(){
