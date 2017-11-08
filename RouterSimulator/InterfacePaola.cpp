@@ -41,7 +41,7 @@ void InterfacePaola::run(){
 
 
 //este metodo actua como servidor para los otros nodos
-void InterfacePaola::receive(){ //nice to have: dos hilos
+void InterfacePaola::receive(){ 
 	int childpid;
     int status = 0;
    	char receivedBuffer[512];
@@ -77,6 +77,17 @@ void InterfacePaola::receive(){ //nice to have: dos hilos
     shmctl( id, IPC_RMID, NULL );
 }
 
+
+/*
+
+Ya tengo el envelope!
+
+0: Me estoy despertando y este es mi ip
+1: Ocupo el (ip, puerto) de este nodo
+2: Respuesta del dispatcher
+3: Broadcast
+4: Red normal
+*/
 //posible mensaje de salida
 //mensaje normal = MacFuente;MacDestino;IPFuente;IPDestino;TipoAccion;IPAccion;Mensaje
 //mensaje de Broadcast local = MacFuente;MacReceiver;distance;IpSolicitada
@@ -227,7 +238,9 @@ Envelope InterfacePaola::assemblePackage(char* message){
     }
 }
 
-//este metodo revisa si el mensaje es broadcast o si se mete en la sharedMemory
+/*
+Envelope: Tipo(char), MacFuente(char[7]), MacDestino(char[7]), Mensaje(Si )
+*/
 void InterfacePaola::processEnvelope(){
         if(!this->inbox.empty()) {
             Envelope envelope = this->inbox.front();
@@ -254,13 +267,7 @@ void InterfacePaola::processEnvelope(){
                         Envelope envelopeBroadcast(2, this->macAddress, "*", atoi(tokens[1]), tokens[0], distance, envelope.getRequestedIp());
                         this->outbox.push(envelopeBroadcast);
                     }
-                    /*else { //se la pido al dispatcher
-                        cout << "I'm gonna ask to the dispatcher\n";
-                        //Envelope envelopeDispatcher(3, envelope.getMacReceiver(), "*");
-                        this->outbox.push(envelopeDispatcher);
-                        //se anade de nuevo a la cola de entrada ya que no tengo la ipreal
-                        this->inbox.push(envelope);
-                    }*/	
+                    	
                 } else {
                     printf("Invalid requested ip address\n");   
                     //exit (EXIT_FAILURE);
