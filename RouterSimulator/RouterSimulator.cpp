@@ -48,10 +48,33 @@ void RouterSimulator::runInterfaceP(){
 }
 
 int main(){
-    RouterSimulator routerSimulator;
-    //thread kevin(&RouterSimulator::runInterfaceK, &routerSimulator);
+    /*RouterSimulator routerSimulator;
+    thread kevin(&RouterSimulator::runInterfaceK, &routerSimulator);
     thread paola(&RouterSimulator::runInterfaceP, &routerSimulator);
     
-    //kevin.join();
-    paola.join();
+    kevin.join();
+    paola.join();*/
+
+	char str[50];
+	/*strcpy (str,"0");
+    strcat (str,";");	
+    strcpy (str,140.90.0.0);
+    strcat (str,";");
+	strcpy (str,"Legos0");
+    strcat (str,";");
+    strcat (str,10.1.131.12);
+    strcat (str,";");
+    strcat (str,"PONER SIZE");
+    strcat (str,";");*/
+    strcat (str,"140.90.0.10");
+    strcat (str,";");
+    strcat (str,"Legos1");
+    strcat (str,";");
+    strcat (str,"10.1.131.12");
+    strcat (str,";");
+    strcat (str,"9876");
+	strcat (str,";");
+
+    string message = str;
+	cout << message.length() << endl;
 }

@@ -4,7 +4,7 @@
 
 class Envelope{
     public:
-    Envelope(char*, char*, Message); //normal in
+    Envelope(char*, char[], Message); //normal in
     Envelope(int, char*, char*, char*, int, Message); //normal out, type 1
     Envelope(char*, char*, char*); //broadcast in
     Envelope(int, char*, char*, int, char*, int, char*); //broadcast out,type 2
@@ -23,11 +23,15 @@ class Envelope{
     bool getIsDispatcher();
 
     private:
-    int type;
-    int realPort;
-    char* realIpAddress;
+	char typeMessage;
     char* macSender;
     char* macReceiver;
+	char payload[1513];	    
+
+
+	int type;
+    int realPort;
+    char* realIpAddress;
     char* requestedMac;
     Message message;
     char* requestedIp;

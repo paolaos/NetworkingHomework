@@ -18,15 +18,27 @@ InterfacePaola::InterfacePaola(list<Route>* ipTable, map<bool, queue<Message> >*
 //este metodo le envia la direccion al dispatcher
 void InterfacePaola::wakeUp(char* macAddress, char* realIpAddress, int dispatcherPort, char* dispatcherAddress){
     Socket s;
-    char buffer[ 512 ] = "";
-    s.Connect( dispatcherAddress, dispatcherPort ); // Same port as server
-    char str[50];
+    s.Connect( dispatcherAddress, dispatcherPort ); // Same port as server    
+	char str[50];
+	strcpy (str,"0");
+    strcat (str,";");	
     strcpy (str,this->macAddress);
+    strcat (str,";");
+	strcpy (str,"Legos0");
     strcat (str,";");
     strcat (str,this->realIpAddress);
     strcat (str,";");
-    string realPort = to_string(this->realPort);
+    strcat (str,"PONER SIZE");
+    strcat (str,";");
+    strcat (str,this->ipAddress);
+    strcat (str,";");
+    strcpy (str,this->macAddress);
+    strcat (str,";");
+    strcpy (str,this->realIpAddress);
+    strcat (str,";");
+	string realPort = to_string(this->realPort);
     strcat (str,realPort.c_str());
+	strcat (str,";");
 
     string message = str;
     s.Write(  (char*)message.c_str() , message.length() );
@@ -101,7 +113,7 @@ void InterfacePaola::send(){
             s.Connect( envelope.getRealIpAddress(), envelope.getRealPort() ); // Same port as server
             char str[200];
             switch(envelope.getType()){
-                case 1: {
+                case 1: { //wake up
                     strcpy (str,envelope.getMacSender());
                     strcat (str,";");
                     strcat (str,envelope.getMacReceiver());
@@ -118,7 +130,7 @@ void InterfacePaola::send(){
                     strcat (str,envelope.getMessage().getMessage());
                     break;
                 }
-                case 2: { //broadcast
+                case 2: { //dispatcher question
                     strcpy (str,envelope.getMacSender());
                     strcat (str,";");
                     strcat (str,envelope.getMacReceiver());
@@ -128,8 +140,30 @@ void InterfacePaola::send(){
                     strcat (str,";");
                     strcat (str,envelope.getRequestedIp());   
                     break;
-                }          
-                default: { //dispatcher
+                }
+				case 3: { //dispatcher answer
+                    strcpy (str,envelope.getMacSender());
+                    strcat (str,";");
+                    strcat (str,envelope.getMacReceiver());
+                    strcat (str,";");
+                    string distance = to_string(envelope.getDistance());
+                    strcat (str, distance.c_str()); 
+                    strcat (str,";");
+                    strcat (str,envelope.getRequestedIp());   
+                    break;
+                }     
+				case 4: { //mensaje normal
+                    strcpy (str,envelope.getMacSender());
+                    strcat (str,";");
+                    strcat (str,envelope.getMacReceiver());
+                    strcat (str,";");
+                    string distance = to_string(envelope.getDistance());
+                    strcat (str, distance.c_str()); 
+                    strcat (str,";");
+                    strcat (str,envelope.getRequestedIp());   
+                    break;
+                }           
+                default: { //no deberia caer aqui
                     strcpy (str,envelope.getMacSender());
                     strcat (str,";");
                     strcat (str,envelope.getRequestedMac());
